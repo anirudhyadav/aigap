@@ -1,0 +1,25 @@
+version: "1"
+name: "Example Policy"
+block_on: [critical, high]
+drift_threshold_pct: 5.0
+
+rules:
+  - id: no-pii-leakage
+    name: "No PII in responses"
+    description: "Responses must not contain user PII."
+    category: guardrail
+    severity: critical
+    plugin: "aigap.plugins.builtins.pii_leakage"
+
+  - id: no-competitor-mention
+    name: "Never mention competitors"
+    description: "Responses must not name competitor products."
+    category: policy
+    severity: high
+    fast_patterns: ["(?i)(competitor_a|competitor_b)"]
+
+  - id: cite-sources
+    name: "Always cite sources"
+    description: "Factual claims must include a citation."
+    category: policy
+    severity: medium

@@ -1,0 +1,43 @@
+[project]
+name = "aigap"
+version = "0.1.0"
+description = "AI guardrails, policy, and efficacy checker"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "typer[all]>=0.12.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "httpx>=0.27.0",
+    "rich>=13.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "ruff", "mypy", "respx"]
+
+[project.scripts]
+aigap = "aigap.cli:app"
+
+[project.entry-points."aigap.plugins"]
+prompt_injection = "aigap.plugins.builtins.prompt_injection:PromptInjectionPlugin"
+pii_leakage      = "aigap.plugins.builtins.pii_leakage:PiiLeakagePlugin"
+jailbreak        = "aigap.plugins.builtins.jailbreak:JailbreakPlugin"
+harmful_content  = "aigap.plugins.builtins.harmful_content:HarmfulContentPlugin"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aigap*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

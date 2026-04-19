@@ -1,0 +1,34 @@
+version: "1"
+name: "Customer Support Bot Policy"
+block_on: [critical, high]
+drift_threshold_pct: 5.0
+
+rules:
+  - id: no-pii-leakage
+    name: "No PII in responses"
+    category: guardrail
+    severity: critical
+    plugin: "aigap.plugins.builtins.pii_leakage"
+
+  - id: prompt-injection-resistance
+    name: "Resist prompt injection"
+    category: guardrail
+    severity: critical
+    plugin: "aigap.plugins.builtins.prompt_injection"
+
+  - id: no-competitor-mention
+    name: "Never mention competitors"
+    category: policy
+    severity: high
+    fast_patterns: ["(?i)(competitorA|competitorB)"]
+
+  - id: cite-sources
+    name: "Always cite sources"
+    category: policy
+    severity: medium
+
+  - id: english-only
+    name: "Respond in English only"
+    category: policy
+    severity: low
+    fast_patterns: ["[\\u4e00-\\u9fff]"]

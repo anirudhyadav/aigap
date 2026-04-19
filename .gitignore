@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.aigap_cache/
+aigap-baseline.json
+aigap-report.json
+dist/
+*.egg-info/
+.venv/
+node_modules/
+vscode-extension/out/
