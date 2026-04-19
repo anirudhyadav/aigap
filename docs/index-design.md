@@ -247,3 +247,21 @@ graph TD
 - `aigap/server/static/index.html` — vanilla JS, no framework, ~700 lines
 - `aigap/server/app.py` — FastAPI mounts `/static`, serves `index.html` at `/`
 - SSE fallback: if server unreachable on page load or Run Check, dashboard renders from built-in mock data automatically
+
+---
+
+## See also — Runbooks
+
+Full operational documentation lives in [`docs/runbooks/`](./runbooks/README.md):
+
+| Runbook | Covers |
+|---|---|
+| [Getting started](./runbooks/getting-started.md) | Install, first run, dashboard |
+| [Dashboard](./runbooks/dashboard.md) | Every panel, live run, export, API |
+| [LLM chain internals](./runbooks/llm-chain.md) | Haiku → Sonnet → Opus, caching, cost |
+| [Policy authoring](./runbooks/policy-authoring.md) | Writing `.aigap-policy.yaml` |
+| [Plugin development](./runbooks/plugin-development.md) | Custom `PolicyPlugin` subclasses |
+| [CI integration](./runbooks/ci-integration.md) | GitHub Actions, drift gate |
+| [Baseline & drift](./runbooks/baseline-drift.md) | Tracking pass-rate changes |
+| [Dataset management](./runbooks/dataset-management.md) | Golden datasets, labelling |
+| [Troubleshooting](./runbooks/troubleshooting.md) | Errors and fixes |
