@@ -238,14 +238,16 @@ graph TD
 |---|---|---|
 | 1 | Single-file vs separate assets? | **Single file** — inlined CSS + JS, served directly by FastAPI `StaticFiles`. No bundler needed. |
 | 2 | Dark mode? | **Dark by default** — GitHub-style dark palette (`#0d1117` bg) via CSS custom properties. Light mode not added yet. |
-| 3 | Drift chart granularity? | **Last 5 runs** — mock history array per rule; real history from `/history` endpoint when server is live. |
+| 3 | Drift chart granularity? | **Last 5 runs** — `/history` endpoint is live and returns per-rule pass-rates from the latest report. |
 | 4 | Live tail vs full refresh? | **Live cell-by-cell** — SSE `classify` events update pass-rate bars in real time; `synthesize` event refreshes the hero grade ring. |
 | 5 | Auth for VS Code extension? | **None for now** — server is localhost-only. Token auth deferred to v2 alongside the extension. |
 
 ## Implemented
 
 - `aigap/server/static/index.html` — vanilla JS, no framework, ~700 lines
-- `aigap/server/app.py` — FastAPI mounts `/static`, serves `index.html` at `/`
+- `aigap/server/app.py` — all endpoints wired: `/`, `/health`, `/report/latest`, `/report/{id}/json`, `/report/{id}/markdown`, `/baseline`, `/history`, `/rules`, `/check` (SSE)
+- `aigap/server/sse.py` — `SSEQueue` bridges orchestrator `on_event` callback to FastAPI `StreamingResponse`
+- `/check` triggers a real pipeline run via the orchestrator and streams live events to the dashboard
 - SSE fallback: if server unreachable on page load or Run Check, dashboard renders from built-in mock data automatically
 
 ---
