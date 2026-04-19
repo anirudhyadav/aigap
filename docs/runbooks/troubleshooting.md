@@ -181,7 +181,7 @@ aigap check . --policy .aigap-policy.yaml --dataset tests/golden_dataset.jsonl
 
 ### Results look stale after changing the policy
 
-The disk cache key is `SHA1(rule_id + pair_id + model)`. Changing the rule **description** doesn't invalidate the cache.
+The disk cache key is `SHA1(rule_id + pair_id + model + rule_description)`. Changing the rule **description** now busts the cache automatically.
 
 **Fix:**
 
@@ -359,6 +359,38 @@ rm aigap-baseline.json
 aigap check . --policy .aigap-policy.yaml --dataset tests/golden_dataset.jsonl
 aigap baseline save
 ```
+
+---
+
+## Team setup from git repo
+
+If you are onboarding a team or setting up aigap in an existing repo without installing from PyPI:
+
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/anirudhyadav/aigap
+   ```
+
+2. **Install in editable mode:**
+   ```bash
+   pip install -e .
+   ```
+
+3. **Customize `.aigap-policy.yaml` for org rules:**
+   Edit the scaffolded policy file (or create one with `aigap init`) to reflect your organisation's specific guardrail and policy requirements.
+
+4. **Write `tests/golden_dataset.jsonl` with org-specific test pairs:**
+   ```jsonl
+   {"id": "pair-001", "prompt": "...", "response": "...", "expected_pass": {"your-rule": true}}
+   ```
+
+5. **Run `aigap check`:**
+   ```bash
+   aigap check . \
+     --policy .aigap-policy.yaml \
+     --dataset tests/golden_dataset.jsonl \
+     --fail-on high
+   ```
 
 ---
 

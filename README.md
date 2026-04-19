@@ -73,11 +73,9 @@ aigap serve   # → http://localhost:7823
 ```
 --policy  / -p   PATH    Policy YAML file          [default: .aigap-policy.yaml]
 --dataset / -d   PATH    Golden dataset JSONL/YAML
---endpoint/ -e   URL     Live endpoint for black-box probing
 --output  / -o   PATH    Write JSON report to path
 --format         FORMAT  markdown|json|both         [default: both]
 --baseline       PATH    Compare to baseline (drift report)
---save-baseline          Save this run as new baseline
 --fail-on        LEVEL   Exit 1 if rule at this severity fails [default: high]
 --concurrency    INT     Parallel API calls         [default: 10]
 --no-cache               Disable result cache
@@ -372,14 +370,15 @@ aigap check . --policy .aigap-policy.yaml --dataset tests/fixtures/golden_datase
 | Plugin registry (entry-point discovery) | ✅ Done |
 | Web dashboard (`index.html`) | ✅ Done |
 | FastAPI server + static serving | ✅ Done |
-| Stage 2: Analyzer (Sonnet) | 🔲 Next |
-| Stage 3: Synthesizer (Opus) | 🔲 Next |
-| Orchestrator (async fan-out) | 🔲 Next |
-| `aigap check` CLI command | 🔲 Next |
-| `aigap init` CLI command | 🔲 Planned |
-| `aigap baseline` CLI command | 🔲 Planned |
-| Report generators (Markdown / JSON / GHA) | 🔲 Planned |
-| VS Code extension | 🔲 v2 |
+| Stage 2: Analyzer (Sonnet) | ✅ Done |
+| Stage 3: Synthesizer (Opus) | ✅ Done |
+| Orchestrator (async fan-out) | ✅ Done |
+| `aigap check` CLI command | ✅ Done |
+| `aigap init` CLI command | ✅ Done |
+| `aigap baseline` CLI command | ✅ Done |
+| Report generators (Markdown / JSON) | ✅ Done |
+| `gha_summary.py` (GHA step summary writer) | 🔲 Planned |
+| VS Code extension | 🔲 Planned |
 
 ---
 

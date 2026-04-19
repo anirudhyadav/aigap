@@ -157,8 +157,6 @@ aigap:
 |---|---|---|
 | `0` | All `block_on` rules pass | ✅ Proceed |
 | `1` | At least one `block_on` rule failed | ❌ Block merge |
-| `2` | Policy or dataset file not found | ❌ Fix file paths |
-| `3` | Anthropic API error | ⚠️ Check `ANTHROPIC_API_KEY`, retry |
 
 ---
 

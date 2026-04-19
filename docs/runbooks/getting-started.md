@@ -42,11 +42,10 @@ cd my-llm-app/
 aigap init --template customer-support
 ```
 
-This creates two files:
+This creates one file:
 
 ```
 .aigap-policy.yaml        ← policy rules
-tests/golden_dataset.jsonl ← example test pairs
 ```
 
 Available templates:
@@ -55,8 +54,6 @@ Available templates:
 |---|---|
 | `customer-support` | Chatbot with PII, competitor, citation rules |
 | `coding-assistant` | Code generation with harmful content + injection rules |
-| `rag-bot` | Retrieval-augmented with hallucination + citation checks |
-| `blank` | Empty policy — start from scratch |
 
 ---
 

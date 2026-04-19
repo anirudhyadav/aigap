@@ -83,7 +83,8 @@ The first call for each rule warms the Anthropic cache; subsequent calls hit it,
 reducing input token cost by ~80%.
 
 **Disk cache:**
-Results are stored at `.aigap_cache/<SHA1>.json` keyed by `SHA1(rule_id + pair_id + model)`.
+Results are stored at `.aigap_cache/<SHA1>.json` keyed by `SHA1(rule_id + pair_id + model + rule_description)`.
+Changing a rule's description automatically busts the cache for that rule.
 Re-running with an unchanged policy + dataset is nearly instant.
 
 ---
@@ -283,7 +284,7 @@ print(result)
 python3 -c "
 from aigap.pipeline.cache import ResultCache
 cache = ResultCache()
-key = ResultCache.make_key('cite-sources', 'pair-0001', 'claude-haiku-4-5-20251001')
+key = ResultCache.make_key('cite-sources', 'pair-0001', 'claude-haiku-4-5-20251001', 'rule description here')
 result = cache.get(key)
 print(result)
 "
