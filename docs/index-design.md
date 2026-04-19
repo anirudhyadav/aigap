@@ -230,10 +230,20 @@ graph TD
 
 ---
 
-## Open questions before coding
+## Implementation decisions (resolved)
 
-1. **Single-file vs. separate assets?** Above assumes one `index.html` with inlined CSS + JS (easier to serve from FastAPI static). Alternatively: `static/index.html` + `static/app.js` + `static/style.css`.
-2. **Dark mode?** CSS custom properties make it easy — add a `prefers-color-scheme` block.
-3. **Baseline drift chart** — show last N runs or just current vs. previous?
-4. **Live tail vs. full refresh** — should the RulesTable update cell-by-cell during a run, or show a progress bar and refresh on `done`?
-5. **Auth** — `aigap serve` is local-only for now; do we need a token for the VS Code extension to use the same backend?
+> `aigap/server/static/index.html` is fully implemented. Decisions below record what was chosen.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Single-file vs separate assets? | **Single file** — inlined CSS + JS, served directly by FastAPI `StaticFiles`. No bundler needed. |
+| 2 | Dark mode? | **Dark by default** — GitHub-style dark palette (`#0d1117` bg) via CSS custom properties. Light mode not added yet. |
+| 3 | Drift chart granularity? | **Last 5 runs** — mock history array per rule; real history from `/history` endpoint when server is live. |
+| 4 | Live tail vs full refresh? | **Live cell-by-cell** — SSE `classify` events update pass-rate bars in real time; `synthesize` event refreshes the hero grade ring. |
+| 5 | Auth for VS Code extension? | **None for now** — server is localhost-only. Token auth deferred to v2 alongside the extension. |
+
+## Implemented
+
+- `aigap/server/static/index.html` — vanilla JS, no framework, ~700 lines
+- `aigap/server/app.py` — FastAPI mounts `/static`, serves `index.html` at `/`
+- SSE fallback: if server unreachable on page load or Run Check, dashboard renders from built-in mock data automatically
