@@ -55,7 +55,7 @@ async def classify_pair(
         )
 
     # ── Cache lookup ──────────────────────────────────────────────────────
-    key = ResultCache.make_key(rule_id=rule.id, pair_id=pair.id, model=MODEL)
+    key = ResultCache.make_key(rule_id=rule.id, pair_id=pair.id, model=MODEL, rule_description=rule.description)
     cached = cache.get(key)
     if cached is not None:
         return cached

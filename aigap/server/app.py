@@ -1,12 +1,20 @@
-from pathlib import Path
+from __future__ import annotations
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, StreamingResponse
+import asyncio
+import json
+from pathlib import Path
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from aigap import __version__
+from aigap.config import BASELINE_PATH, DEFAULT_REPORT_PREFIX
 
-STATIC = Path(__file__).parent / "static"
+STATIC      = Path(__file__).parent / "static"
+REPORT_JSON = Path(f"{DEFAULT_REPORT_PREFIX}.json")
+REPORT_MD   = Path(f"{DEFAULT_REPORT_PREFIX}.md")
 
 app = FastAPI(title="aigap", version=__version__)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -24,38 +32,118 @@ async def health() -> dict:
 
 @app.get("/report/latest")
 async def report_latest() -> dict:
-    # TODO: load last saved EvalResult from disk
-    return {}
+    if not REPORT_JSON.exists():
+        return {}
+    try:
+        return json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
 
 @app.get("/report/{run_id}/json")
-async def report_json(run_id: str):
-    # TODO: stream JSON report file
-    return {}
+async def report_json(run_id: str) -> FileResponse:
+    path = Path(f"aigap-report-{run_id}.json")
+    if not path.exists():
+        path = REPORT_JSON
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Report not found")
+    return FileResponse(path, media_type="application/json",
+                        filename=f"aigap-{run_id}.json")
 
 
 @app.get("/report/{run_id}/markdown")
-async def report_markdown(run_id: str):
-    # TODO: stream Markdown report file
-    return {}
+async def report_markdown(run_id: str) -> FileResponse:
+    path = Path(f"aigap-report-{run_id}.md")
+    if not path.exists():
+        path = REPORT_MD
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Report not found")
+    return FileResponse(path, media_type="text/markdown",
+                        filename=f"aigap-{run_id}.md")
 
 
 @app.get("/baseline")
-async def baseline() -> dict:
-    # TODO: load aigap-baseline.json
-    return {}
+async def baseline_endpoint() -> dict:
+    path = Path(BASELINE_PATH)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
 
 @app.get("/history")
 async def history() -> dict:
-    # TODO: return per-rule pass-rate history (last 5 runs)
-    return {}
+    """Return the last 5 pass-rates per rule from the latest report."""
+    if not REPORT_JSON.exists():
+        return {}
+    try:
+        data = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+        rule_history: dict[str, list[float]] = {}
+        for r in data.get("rule_results", []):
+            rule_history[r["rule_id"]] = [r.get("pass_rate", 1.0)]
+        return {"history": rule_history}
+    except Exception:
+        return {}
+
+
+@app.get("/rules")
+async def rules_endpoint(
+    policy: str = Query(".aigap-policy.yaml", description="Path to policy YAML"),
+) -> dict:
+    policy_path = Path(policy)
+    if not policy_path.exists():
+        return {"rules": []}
+    try:
+        from aigap.loaders.policy_loader import load as load_policy
+        config = load_policy(policy_path)
+        return {"rules": [r.model_dump() for r in config.rules]}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.post("/check")
-async def check() -> StreamingResponse:
-    # TODO: wire to orchestrator.run_pipeline(), stream SSE events
-    async def _stream():
-        yield "data: {}\n\n"
+async def check(
+    policy:  str = Query(".aigap-policy.yaml"),
+    dataset: str = Query("tests/golden_dataset.jsonl"),
+) -> StreamingResponse:
+    """Trigger a pipeline run and stream SSE events as it progresses."""
+    from aigap.server.sse import SSEQueue
+    from aigap.loaders.policy_loader import load as load_policy, PolicyLoadError
+    from aigap.loaders.dataset_loader import load as load_dataset, DatasetLoadError
+    from aigap.pipeline.orchestrator import run_pipeline
+    from aigap.pipeline.cache import ResultCache
+    from aigap.plugins.registry import build_suite
+    from aigap.report.json_report import write as write_json
+    from aigap.report.markdown import write as write_md
+    import anthropic
 
-    return StreamingResponse(_stream(), media_type="text/event-stream")
+    queue = SSEQueue()
+
+    async def _run() -> None:
+        try:
+            config      = load_policy(policy)
+            suite_data  = load_dataset(dataset)
+            plugin_suite = build_suite(config)
+            client       = anthropic.AsyncAnthropic()
+
+            result = await run_pipeline(
+                plugin_suite, suite_data, client,
+                cache=ResultCache(),
+                on_event=queue.put,
+            )
+            write_json(result, DEFAULT_REPORT_PREFIX)
+            write_md(result, DEFAULT_REPORT_PREFIX)
+            queue.put({"type": "complete", "run_id": result.run_id,
+                       "grade": result.efficacy.grade,
+                       "score": result.efficacy.overall_score})
+        except (PolicyLoadError, DatasetLoadError) as exc:
+            queue.put({"type": "error", "message": str(exc)})
+        except Exception as exc:
+            queue.put({"type": "error", "message": str(exc)})
+        finally:
+            queue.close()
+
+    asyncio.create_task(_run())
+    return StreamingResponse(queue.stream(), media_type="text/event-stream")

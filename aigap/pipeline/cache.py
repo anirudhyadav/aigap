@@ -50,9 +50,9 @@ class ResultCache:
     # ── Key construction ──────────────────────────────────────────────────
 
     @staticmethod
-    def make_key(rule_id: str, pair_id: str, model: str) -> str:
-        """Stable SHA1 key for a (rule, pair, model) triple."""
-        raw = f"{rule_id}::{pair_id}::{model}"
+    def make_key(rule_id: str, pair_id: str, model: str, rule_description: str = "") -> str:
+        """Stable SHA1 key — includes rule_description so description changes bust the cache."""
+        raw = f"{rule_id}::{pair_id}::{model}::{rule_description}"
         return hashlib.sha1(raw.encode()).hexdigest()
 
     # ── Disk I/O ──────────────────────────────────────────────────────────
