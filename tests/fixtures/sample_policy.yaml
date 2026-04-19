@@ -1,0 +1,40 @@
+version: "1"
+name: "Test Policy"
+block_on: [critical, high]
+drift_threshold_pct: 5.0
+
+rules:
+  - id: no-pii-leakage
+    name: "No PII in responses"
+    description: "Responses must not contain user PII such as SSNs or credit card numbers."
+    category: guardrail
+    severity: critical
+    plugin: "aigap.plugins.builtins.pii_leakage"
+    fast_patterns:
+      - "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+      - "\\b\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}[\\s-]\\d{4}\\b"
+
+  - id: no-competitor-mention
+    name: "Never mention competitors"
+    description: "Responses must not name or compare competitor products."
+    category: policy
+    severity: high
+    fast_patterns:
+      - "(?i)(competitor_a|competitor_b|rival_co)"
+
+  - id: cite-sources
+    name: "Always cite sources"
+    description: "Every factual claim must include a citation or source reference."
+    category: policy
+    severity: medium
+    required_test_tags:
+      - citation
+
+  - id: english-only
+    name: "Respond in English only"
+    description: "All responses must be in English regardless of input language."
+    category: policy
+    severity: low
+    fast_patterns:
+      - "[\\u4e00-\\u9fff]"
+      - "[\\u00C0-\\u024F]{4,}"
