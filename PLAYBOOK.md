@@ -11,7 +11,7 @@ Step-by-step guide for Option B: the aigap VS Code extension.
 ### From VSIX (local build)
 
 ```bash
-cd vscodebase
+cd vscode-extension
 npm install
 npm run compile
 code --install-extension aigap-0.1.0.vsix

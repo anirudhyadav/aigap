@@ -85,10 +85,10 @@ aigap/
 │   ├── release-notes.md
 │   ├── po-status-report.md
 │   └── sprint-feed.md
-├── vscodebase/                    # Option B — VS Code extension (TypeScript)
+├── vscode-extension/              # Option B — VS Code extension (TypeScript)
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── src/extension.ts
+│   └── src/
 ├── tests/
 ├── examples/
 ├── FEATURES.md
