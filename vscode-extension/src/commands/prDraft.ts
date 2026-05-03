@@ -27,11 +27,11 @@ export async function commandPrDraft(): Promise<void> {
     async (_, token) => {
       let gitDiff = ''
       try {
-        gitDiff = execFileSync('git', ['diff', ...range.split(/\s+/), '--stat', '--diff-filter=AM'], {
+        gitDiff = execFileSync('git', ['diff', ...range.trim().split(/\s+/), '--stat', '--diff-filter=AM'], {
           cwd: workspaceRoot, maxBuffer: 512 * 1024
         }).toString()
 
-        const commitMessages = execFileSync('git', ['log', ...range.split(/\s+/), '--oneline'], {
+        const commitMessages = execFileSync('git', ['log', ...range.trim().split(/\s+/), '--oneline'], {
           cwd: workspaceRoot
         }).toString()
 

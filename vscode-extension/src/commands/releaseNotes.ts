@@ -37,7 +37,7 @@ export async function commandReleaseNotes(): Promise<void> {
       progress.report({ message: 'Reading git diff...' })
       let gitDiff = ''
       try {
-        gitDiff = execFileSync('git', ['diff', ...branch.split(/\s+/), '--stat', '--diff-filter=AM'], {
+        gitDiff = execFileSync('git', ['diff', ...branch.trim().split(/\s+/), '--stat', '--diff-filter=AM'], {
           cwd: vscode.workspace.workspaceFolders?.[0].uri.fsPath,
           maxBuffer: 1024 * 1024
         }).toString()
