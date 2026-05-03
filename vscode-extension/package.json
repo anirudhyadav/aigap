@@ -5,6 +5,18 @@
   "version": "0.1.0",
   "publisher": "anirudhyadav",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anirudhyadav/aigap"
+  },
+  "homepage": "https://github.com/anirudhyadav/aigap#readme",
+  "bugs": {
+    "url": "https://github.com/anirudhyadav/aigap/issues"
+  },
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -103,6 +115,26 @@
         "command": "aigap.enforcementLink",
         "title": "aigap: Link Policies to Enforcement",
         "category": "aigap"
+      },
+      {
+        "command": "aigap.deepEval",
+        "title": "aigap: Deep Evaluate (Three-Stage Pipeline)",
+        "category": "aigap"
+      },
+      {
+        "command": "aigap.ingestNotion",
+        "title": "aigap: Ingest from Notion",
+        "category": "aigap"
+      },
+      {
+        "command": "aigap.ingestSharePoint",
+        "title": "aigap: Ingest from SharePoint",
+        "category": "aigap"
+      },
+      {
+        "command": "aigap.ingestGoogleDocs",
+        "title": "aigap: Ingest from Google Docs",
+        "category": "aigap"
       }
     ],
     "chatParticipants": [
@@ -140,7 +172,13 @@
           "description": "Default Confluence base URL (e.g. https://yourorg.atlassian.net)"
         }
       }
-    }
+    },
+    "yamlValidation": [
+      {
+        "fileMatch": ".aigap-policy.yaml",
+        "url": "./schemas/aigap-policy.schema.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -155,7 +193,10 @@
     "testEnvironment": "node",
     "testMatch": [
       "**/*.test.ts"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^vscode$": "<rootDir>/src/__mocks__/vscode.ts"
+    }
   },
   "dependencies": {
     "mammoth": "^1.7.1",
