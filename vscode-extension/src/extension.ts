@@ -15,6 +15,10 @@ import { commandFrameworkMap } from './commands/frameworkMap'
 import { commandIngestConfluence } from './commands/ingestConfluence'
 import { commandStaleness } from './commands/staleness'
 import { commandEnforcementLink } from './commands/enforcementLink'
+import { commandDeepEval } from './commands/deepEval'
+import { commandIngestNotion } from './commands/ingestNotion'
+import { commandIngestSharePoint } from './commands/ingestSharePoint'
+import { commandIngestGoogleDocs } from './commands/ingestGoogleDocs'
 import { registerChatParticipant } from './chat/participant'
 import { RtmTreeProvider } from './views/RtmTreeProvider'
 
@@ -48,6 +52,14 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('aigap.ingestConfluence', () => commandIngestConfluence()),
         vscode.commands.registerCommand('aigap.staleness',       () => commandStaleness()),
         vscode.commands.registerCommand('aigap.enforcementLink', () => commandEnforcementLink()),
+
+        // ── Additional Ingestion ──────────────────────────────────────────────
+        vscode.commands.registerCommand('aigap.ingestNotion',    () => commandIngestNotion()),
+        vscode.commands.registerCommand('aigap.ingestSharePoint', () => commandIngestSharePoint()),
+        vscode.commands.registerCommand('aigap.ingestGoogleDocs', () => commandIngestGoogleDocs()),
+
+        // ── Three-Stage Pipeline ────────────────────────────────────────────
+        vscode.commands.registerCommand('aigap.deepEval',        () => commandDeepEval()),
     )
 
     registerChatParticipant(context)
