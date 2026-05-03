@@ -122,6 +122,6 @@ def _parse_severities(raw: list, path: Path) -> list[RuleSeverity]:
 def _fmt_validation(exc: ValidationError) -> str:
     lines = []
     for err in exc.errors():
-        loc = " → ".join(str(l) for l in err["loc"])
+        loc = " → ".join(str(part) for part in err["loc"])
         lines.append(f"  {loc}: {err['msg']}")
     return "\n".join(lines)

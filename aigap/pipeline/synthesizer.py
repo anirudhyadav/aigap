@@ -117,5 +117,9 @@ def _parse_recommendations(response: anthropic.types.Message) -> list[str]:
         pass
 
     # Fallback: treat each line as a recommendation
-    lines = [l.strip().lstrip("0123456789.-) ") for l in raw.splitlines() if l.strip()]
+    lines = [
+        line.strip().lstrip("0123456789.-) ")
+        for line in raw.splitlines()
+        if line.strip()
+    ]
     return lines[:5]

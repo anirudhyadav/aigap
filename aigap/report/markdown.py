@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aigap.models.evaluation import EvalResult, RuleResult
+from aigap.models.evaluation import EvalResult
 from aigap.models.report import DriftReport
 
 

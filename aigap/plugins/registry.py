@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import importlib
 from importlib.metadata import entry_points
-from typing import Any
 
 from aigap.models.policy import PolicyConfig, PolicyRule, PolicySuite
 from aigap.plugins.base import PolicyPlugin

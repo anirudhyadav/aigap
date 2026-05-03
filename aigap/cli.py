@@ -11,7 +11,6 @@ Commands:
 from __future__ import annotations
 
 import asyncio
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -135,14 +134,7 @@ def check(
         from aigap.report.markdown import write as write_md
         written.append(write_md(result, output, drift))
 
-    # ── Print summary ──────────────────────────────────────────────────────
-    _print_summary(result, drift, ci)
-
-    for p in written:
-        console.print(f"  [dim]→ {p}[/dim]")
-
-    # ── Exit code ──────────────────────────────────────────────────────────
-    from aigap.models.policy import RuleSeverity
+    # ── Exit gate (before summary so CI / GHA see the same verdict) ───────
     _severities = ["critical", "high", "medium", "low"]
     gate_idx    = _severities.index(fail_on) if fail_on in _severities else 1
 
@@ -150,6 +142,18 @@ def check(
         r.failed > 0 and _severities.index(r.severity) <= gate_idx
         for r in result.rule_results
     )
+
+    # ── Print summary ──────────────────────────────────────────────────────
+    _print_summary(result, drift, ci)
+
+    if ci:
+        from aigap.report.gha_summary import write_step_summary
+
+        write_step_summary(result, drift, exit_ok=not should_fail)
+
+    for p in written:
+        console.print(f"  [dim]→ {p}[/dim]")
+
     raise typer.Exit(1 if should_fail else 0)
 
 
@@ -255,7 +259,7 @@ def init(
 
     output.write_text(TEMPLATES[template], encoding="utf-8")
     console.print(f"[green]✓[/green] Created {output}")
-    console.print(f"  Review and edit the rules, then run:")
+    console.print("  Review and edit the rules, then run:")
     console.print(f"  [bold]aigap check . --policy {output} --dataset tests/golden_dataset.jsonl[/bold]")
 
 
@@ -361,7 +365,7 @@ def _print_dry_run(config, suite, concurrency: int) -> None:
     console.print("\n[bold]Dry-run estimate[/bold]")
     console.print(f"  Would make ~{total_pairs} Haiku calls")
     console.print(f"  Would make ~{est_failures} Sonnet calls (est. 20% failure rate)")
-    console.print(f"  Would make 1 Opus call")
+    console.print("  Would make 1 Opus call")
     console.print(f"  Concurrency: {concurrency}")
 
 
@@ -373,7 +377,7 @@ def _print_summary(result, drift, ci: bool) -> None:
         rprint(f"Grade [{grade_colour}]{e.grade}[/{grade_colour}]  Score {e.overall_score:.0f}/100  "
                f"Coverage {e.coverage_score:.0f}%  FPR {e.false_positive_rate:.1f}%  FNR {e.false_negative_rate:.1f}%")
     else:
-        console.print(f"\n[bold]Result[/bold]")
+        console.print("\n[bold]Result[/bold]")
         console.print(f"  Grade    [{grade_colour}]{e.grade}[/{grade_colour}]")
         console.print(f"  Score    {e.overall_score:.0f} / 100")
         console.print(f"  Coverage {e.coverage_score:.0f}%")

@@ -26,7 +26,6 @@ from aigap.models.dataset import GoldenPair, TestSuite
 from aigap.models.evaluation import (
     AnalysisResult,
     ClassifierResult,
-    EfficacyScore,
     EvalResult,
     RuleResult,
     Verdict,

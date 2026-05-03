@@ -1,0 +1,21 @@
+{
+  "name": "aigap",
+  "displayName": "aigap",
+  "description": "AI guardrails and policy checks (scaffold — extend for editor integration).",
+  "version": "0.1.0",
+  "publisher": "aigap",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}

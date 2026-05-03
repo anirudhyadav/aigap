@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import time
 from pathlib import Path
 
-from aigap.models.evaluation import ClassifierResult, Verdict
+from aigap.models.evaluation import ClassifierResult
 
 
 class ResultCache:

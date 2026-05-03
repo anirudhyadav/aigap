@@ -26,6 +26,7 @@ prompt_injection = "aigap.plugins.builtins.prompt_injection:PromptInjectionPlugi
 pii_leakage      = "aigap.plugins.builtins.pii_leakage:PiiLeakagePlugin"
 jailbreak        = "aigap.plugins.builtins.jailbreak:JailbreakPlugin"
 harmful_content  = "aigap.plugins.builtins.harmful_content:HarmfulContentPlugin"
+competitor_mention = "aigap.plugins.builtins.competitor_mention:CompetitorMentionPlugin"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
