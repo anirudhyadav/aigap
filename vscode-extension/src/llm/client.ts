@@ -19,13 +19,19 @@ export async function callLLM(
     vscode.LanguageModelChatMessage.User(prompt)
   ]
 
-  const response = await model.sendRequest(messages, {}, token ?? new vscode.CancellationTokenSource().token)
+  const cts = token ? undefined : new vscode.CancellationTokenSource()
+  const effectiveToken = token ?? cts!.token
+  try {
+    const response = await model.sendRequest(messages, {}, effectiveToken)
 
-  let text = ''
-  for await (const chunk of response.text) {
-    text += chunk
+    let text = ''
+    for await (const chunk of response.text) {
+      text += chunk
+    }
+    return { text }
+  } finally {
+    cts?.dispose()
   }
-  return { text }
 }
 
 export async function callLLMJson<T>(

@@ -3,9 +3,9 @@ import { callLLM } from '../llm/client'
 import { buildReleaseNotesPrompt } from '../llm/context_builder'
 import { loadPoliciesContext } from '../workspace/reader'
 import { getAigapDir } from '../workspace/detector'
-import { writeRelease } from '../workspace/writer'
+import { writeRelease, sanitizeFilename } from '../workspace/writer'
 import { readRegistry, nextId, writeRegistry } from '../core/registry'
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 
 export async function commandReleaseNotes(): Promise<void> {
   const aigapDir = getAigapDir()
@@ -37,7 +37,7 @@ export async function commandReleaseNotes(): Promise<void> {
       progress.report({ message: 'Reading git diff...' })
       let gitDiff = ''
       try {
-        gitDiff = execSync(`git diff ${branch} --stat --diff-filter=AM`, {
+        gitDiff = execFileSync('git', ['diff', ...branch.trim().split(/\s+/), '--stat', '--diff-filter=AM'], {
           cwd: vscode.workspace.workspaceFolders?.[0].uri.fsPath,
           maxBuffer: 1024 * 1024
         }).toString()
@@ -59,7 +59,7 @@ Format as markdown with sections: ## Summary, ## What Changed (mapped to GP-XXX 
       const doc = await vscode.workspace.openTextDocument({ content: releaseContent, language: 'markdown' })
       await vscode.window.showTextDocument(doc)
 
-      vscode.window.showInformationMessage(`aigap: Release notes saved to .aigap/releases/${version}.md`)
+      vscode.window.showInformationMessage(`aigap: Release notes saved to .aigap/releases/${sanitizeFilename(version)}.md`)
     }
   )
 }

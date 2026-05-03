@@ -70,6 +70,26 @@ Assign stable IDs (GP-NNN, GC-NNN, EV-NNN). Format as the aigap POLICIES.md form
       ensureAigapDir(aigapDir)
       writePolicies(aigapDir, llmResponse.text)
 
+      let registry = readRegistry(aigapDir)
+      const gpMatches = [...llmResponse.text.matchAll(/GP-(\d+)/g)]
+      const gcMatches = [...llmResponse.text.matchAll(/GC-(\d+)/g)]
+      const evMatches = [...llmResponse.text.matchAll(/EV-(\d+)/g)]
+
+      const maxGP = gpMatches.reduce((max, m) => Math.max(max, parseInt(m[1], 10)), 0)
+      const maxGC = gcMatches.reduce((max, m) => Math.max(max, parseInt(m[1], 10)), 0)
+      const maxEV = evMatches.reduce((max, m) => Math.max(max, parseInt(m[1], 10)), 0)
+
+      registry = {
+        ...registry,
+        counters: {
+          ...registry.counters,
+          GP: Math.max(registry.counters.GP, maxGP),
+          GC: Math.max(registry.counters.GC, maxGC),
+          EV: Math.max(registry.counters.EV, maxEV)
+        }
+      }
+      writeRegistry(aigapDir, registry)
+
       vscode.window.showInformationMessage(`aigap: Ingested "${pageTitle}" from Confluence. Review .aigap/POLICIES.md`)
     }
   )
