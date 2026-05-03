@@ -1,4 +1,5 @@
 import { execSync } from 'child_process'
+import * as fs from 'fs'
 import * as vscode from 'vscode'
 
 interface StalenessEntry {
@@ -16,8 +17,7 @@ export function analyzeStaleness(aigapDir: string): StalenessEntry[] {
   const policiesPath = `${aigapDir}/POLICIES.md`
 
   try {
-    const fs = require('fs')
-    const content = fs.readFileSync(policiesPath, 'utf-8') as string
+    const content = fs.readFileSync(policiesPath, 'utf-8')
     const ids = [...new Set([...content.matchAll(idPattern)].map(m => m[1]))]
 
     for (const id of ids) {
