@@ -75,10 +75,13 @@ export async function commandInit(context: vscode.ExtensionContext): Promise<voi
         const { id, registry: r } = nextId(registry, 'GP')
         registry = r
 
-        const matchedCat = categories.find(c =>
-          c.name.toLowerCase().includes(p.suggestedCategory?.toLowerCase() ?? '') ||
-          (p.suggestedCategory ?? '').toLowerCase().includes(c.name.toLowerCase())
-        )
+        const matchedCat = p.suggestedCategory
+          ? categories.find(c => {
+              const cat = c.name.toLowerCase()
+              const suggested = p.suggestedCategory.toLowerCase()
+              return cat === suggested || cat.includes(suggested) || suggested.includes(cat)
+            })
+          : undefined
         const catId = matchedCat?.id ?? (categories.length > 0 ? categories[0].id : 'GC-001')
 
         const matchedVec = vectors.find(v => v.type === p.suggestedVector)
