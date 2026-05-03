@@ -1,0 +1,73 @@
+name: aigap Policy Check (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      policy-file:
+        description: "Path to .aigap-policy.yaml"
+        type: string
+        default: ".aigap-policy.yaml"
+      dataset-file:
+        description: "Path to golden dataset (JSONL, YAML, or JSON)"
+        type: string
+        default: "tests/golden_dataset.jsonl"
+      baseline-file:
+        description: "Path to baseline file (optional)"
+        type: string
+        default: ""
+      fail-on:
+        description: "Severity threshold for failure (critical, high, medium, low)"
+        type: string
+        default: "high"
+      python-version:
+        description: "Python version to use"
+        type: string
+        default: "3.11"
+    secrets:
+      ANTHROPIC_API_KEY:
+        description: "Anthropic API key for the three-stage LLM chain"
+        required: true
+
+jobs:
+  aigap-check:
+    name: aigap Policy Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install aigap
+        run: pip install aigap
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: .aigap_cache
+          key: aigap-cache-${{ hashFiles(inputs.policy-file, inputs.dataset-file) }}
+
+      - name: Run aigap check
+        run: |
+          BASELINE_ARG=""
+          if [ -n "${{ inputs.baseline-file }}" ] && [ -f "${{ inputs.baseline-file }}" ]; then
+            BASELINE_ARG="--baseline ${{ inputs.baseline-file }}"
+          fi
+
+          aigap check . \
+            --policy "${{ inputs.policy-file }}" \
+            --dataset "${{ inputs.dataset-file }}" \
+            $BASELINE_ARG \
+            --ci \
+            --fail-on "${{ inputs.fail-on }}" \
+            --output aigap-report.json
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aigap-report
+          path: aigap-report.json

@@ -1,33 +1,124 @@
-# aigap — AI Guardrails and Policies
+# AIGAP — AI Guardrails and Policies
 
 > Evaluate LLM applications against a declared policy. Define once. Enforce everywhere. Audit always.
 
-`aigap` runs a three-stage LLM chain (Haiku → Sonnet → Opus) against a YAML policy file and a golden dataset, produces a scored report, and serves a live dashboard. It ships five built-in guardrail plugins and a plugin API for custom rules.
+---
+
+## The Problem AIGAP Solves
+
+Most teams ship AI without enforceable guardrails. Policies live in Confluence — never enforced in code. By the time an LLM call violates a data-privacy rule, it is already in the audit log. No one can confidently answer: *"Is our AI behaving within policy?"*
+
+**AIGAP keeps that thread alive — in the repo itself, versioned alongside the code.**
 
 ---
 
-## What it checks
+## Two Delivery Paths
 
-| Category | What it catches |
-|---|---|
-| **Guardrails** | Prompt injection, PII leakage, jailbreak attempts, harmful content |
-| **Policy** | Competitor mentions, citation requirements, language constraints, custom rules |
-| **Efficacy** | False positive / negative rates, test coverage gaps, drift from baseline |
+| | Option A — MD Prompts | Option B — VS Code Extension |
+|---|---|---|
+| **Setup** | Zero. Copy-paste markdown. | Install extension + GitHub Copilot |
+| **LLM** | Any — paste into Claude, ChatGPT, Gemini, Copilot | GitHub Copilot via `vscode.lm` — no API key needed |
+| **Best for** | Individuals, one-off audits, any LLM preference | Org teams on GitHub Enterprise + Copilot |
+| **Output** | Paste result into `.aigap/POLICIES.md` | Auto-writes `.aigap/` in repo |
+| **Docs** | [`prompts/README.md`](prompts/README.md) | [`PLAYBOOK.md`](PLAYBOOK.md) |
 
 ---
 
-## Installation
+## Repository Structure
 
-```bash
-pip install aigap          # requires Python ≥ 3.11
-export ANTHROPIC_API_KEY=sk-ant-...
+```
+aigap/
+├── README.md                              ← you are here
+├── FEATURES.md                            ← complete feature reference
+├── PLAYBOOK.md                            ← VS Code extension full guide
+├── DECK_BRIEF.md                          ← executive deck content
+│
+├── prompts/                               ← Option A: copy-paste templates (zero setup)
+│   ├── README.md
+│   ├── define-policies.md                 ← policy doc → GP/GC/EV entities
+│   ├── update-policy.md                   ← append new rule with next stable ID
+│   ├── validate-policies.md               ← check for duplicate IDs, missing fields
+│   ├── gap-analysis.md                    ← code file vs POLICIES.md coverage check
+│   ├── generate-enforcement.md            ← generate enforcement stubs
+│   ├── audit-report.md                    ← map policy IDs to audit entries
+│   ├── change-impact.md                   ← old vs new policy delta analysis
+│   ├── framework-map.md                   ← policies vs EU AI Act/NIST/ISO 42001
+│   ├── pr-description.md                  ← traceable PR from git diff + POLICIES.md
+│   ├── release-notes.md                   ← policy-mapped release notes
+│   ├── po-status-report.md                ← compliance status for leadership
+│   └── sprint-feed.md                     ← policies → sprint tasks with story points
+│
+├── vscode-extension/                      ← Option B: VS Code Extension (TypeScript)
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── extension.ts                   ← registers all 15 commands + @aigap participant
+│       ├── chat/                          ← @aigap Copilot Chat participant
+│       ├── commands/                      ← 15 VS Code commands
+│       ├── core/
+│       │   ├── parsers/                   ← PDF, DOCX, Markdown
+│       │   ├── extractors/                ← categories, policies, enforcement vectors
+│       │   ├── generators/                ← POLICIES.md, enforcement, audit, sprint, framework
+│       │   └── analyzers/                 ← gap, change impact, staleness, enforcement linkage
+│       ├── llm/                           ← vscode.lm wrapper — no API key required
+│       ├── views/                         ← traceability tree view, gap report panel
+│       └── workspace/                     ← workspace reader/writer/detector
+│
+├── aigap/                                 ← Python package (CLI + library)
+│   ├── cli.py                             ← Typer CLI entry point
+│   ├── config.py                          ← model names, defaults
+│   ├── models/                            ← Pydantic data models
+│   ├── loaders/                           ← YAML/JSONL/JSON loaders
+│   ├── pipeline/                          ← three-stage LLM chain
+│   ├── plugins/                           ← guardrail plugin system
+│   ├── scoring/                           ← efficacy, coverage, drift
+│   ├── report/                            ← Markdown, JSON, GHA summary
+│   └── server/                            ← FastAPI dashboard + SSE
+│
+├── tests/                                 ← unit + integration tests
+├── examples/                              ← example policies + datasets
+├── .github/workflows/
+│   ├── aigap-ci.yaml                      ← CI: lint + test + guardrail check
+│   ├── aigap-release.yaml                 ← PyPI publish on release
+│   └── aigap-reusable.yml                 ← reusable policy check for consumer repos
+└── pyproject.toml
 ```
 
 ---
 
-## Quick start
+## Quick Start
+
+### Option A — Zero Setup (5 minutes)
+
+1. Open [`prompts/define-policies.md`](prompts/define-policies.md)
+2. Replace `[PASTE YOUR POLICY DOCUMENT TEXT HERE]` with your policy content
+3. Paste into any LLM (Claude, ChatGPT, Copilot Chat, Gemini)
+4. Copy the output into `.aigap/POLICIES.md` in your repo
+5. Commit it — your team now has a living guardrail spec
+
+### Option B — VS Code Extension
 
 ```bash
+cd vscode-extension
+npm install
+# Press F5 in VS Code to launch Extension Development Host
+# Command Palette → aigap: Initialize from Policy Doc → select your PDF or Word file
+```
+
+**Org-wide deployment:**
+```bash
+cd vscode-extension
+npm install && npm run package
+# Distribute aigap-0.1.0.vsix via MDM or VS Code Server
+code --install-extension aigap-0.1.0.vsix
+```
+
+### Python CLI (runtime checks)
+
+```bash
+pip install aigap          # requires Python ≥ 3.11
+export ANTHROPIC_API_KEY=sk-ant-...
+
 # 1. Scaffold a policy file and example dataset
 aigap init --template customer-support
 
@@ -52,128 +143,83 @@ aigap check . \
 
 ---
 
-## CLI reference
+## The `.aigap/` Folder
 
-### `aigap check [TARGET]`
-
-Run the full three-stage pipeline.
+Both delivery paths write to the same format — **commit `.aigap/` to git.**
 
 ```
---policy  / -p   PATH     Policy YAML file          [default: .aigap-policy.yaml]
---dataset / -d   PATH     Golden dataset JSONL/YAML
---output  / -o   PATH     Write JSON report to this path
---format         FORMAT   markdown | json | both     [default: both]
---baseline       PATH     Compare to baseline (adds drift report)
---fail-on        LEVEL    Exit 1 if a rule at this severity fails [default: high]
---concurrency    INT      Parallel Anthropic API calls [default: 10]
---no-cache                Disable disk + memory cache
---dry-run                 Load policy + dataset, skip API calls
---ci                      Write Markdown scorecard to $GITHUB_STEP_SUMMARY
---verbose                 Print per-pair results to stdout
+.aigap/
+├── registry.json              # ID counter — never reused
+├── POLICIES.md                # Living guardrail spec: categories, policies, vectors
+├── index.md                   # Policy traceability matrix
+├── gap-report.md              # Unenforced policies flagged
+├── enforcement/               # Generated enforcement stubs
+├── audit-report.md            # Policy-to-audit-log mapping
+├── change-impact-report.md
+├── framework-map.md
+├── sprint-feed.md
+├── staleness-report.md
+├── enforcement-linkage.md
+└── releases/
+    ├── v1.0.md
+    └── status-v1.0.md
 ```
 
-### `aigap init`
+**Stable IDs — never deleted, never reused:**
 
-Scaffold a starter policy file and golden dataset.
-
-```
---template    NAME    customer-support | coding-assistant   [default: customer-support]
---output-dir  PATH    Where to write the files              [default: .]
-```
-
-### `aigap baseline`
-
-```
-aigap baseline save [--report PATH]   # Save current report as baseline
-aigap baseline show                   # Print current baseline summary
-```
-
-### `aigap rules`
-
-List all rules resolved from the policy file, including which plugin handles each.
-
-```
---policy / -p  PATH   [default: .aigap-policy.yaml]
-```
-
-### `aigap serve`
-
-Start the FastAPI backend and web dashboard.
-
-```
---host   HOST   [default: 0.0.0.0]
---port   INT    [default: 7823]
---reload        Enable hot-reload (development)
-```
-
-### `aigap version`
-
-Print the installed version.
-
----
-
-## Policy file (`.aigap-policy.yaml`)
-
-```yaml
-version: "1"
-name: "Customer Support Bot"
-block_on: [critical, high]       # severities that cause exit code 1
-drift_threshold_pct: 5.0         # alert if any rule degrades > 5 percentage points
-
-rules:
-  - id: no-pii-leakage
-    name: "No PII in responses"
-    description: "Responses must not contain user PII."
-    category: guardrail           # guardrail | policy
-    severity: critical            # critical | high | medium | low
-    plugin: "aigap.plugins.builtins.pii_leakage:PiiLeakagePlugin"
-
-  - id: no-competitor-mention
-    name: "Never mention competitors"
-    description: "Responses must not name competitor products."
-    category: policy
-    severity: high
-    fast_patterns:
-      - "(?i)(CompetitorA|CompetitorB)"
-
-  - id: cite-sources
-    name: "Always cite sources"
-    description: "Every factual claim must include a citation."
-    category: policy
-    severity: medium
-    required_test_tags: ["citation"]   # dataset pairs must carry this tag
-```
-
-**Rule fields**
-
-| Field | Required | Description |
+| Format | Example | Scope |
 |---|---|---|
-| `id` | ✅ | Lowercase slug — stable, never reuse |
-| `name` | ✅ | Human-readable label |
-| `description` | ✅ | Used verbatim as context in LLM prompts — be precise |
-| `category` | ✅ | `guardrail` (safety) or `policy` (business rules) |
-| `severity` | ✅ | `critical` / `high` / `medium` / `low` |
-| `plugin` | — | `module.path:ClassName` — delegates to a `PolicyPlugin` subclass |
-| `fast_patterns` | — | Regex list — match returns FAIL immediately, skipping LLM |
-| `params` | — | Dict forwarded to plugin constructor |
-| `required_test_tags` | — | Tags that must exist in dataset for coverage credit |
+| `GP-NNN` | `GP-001`, `GP-012` | Guardrail Policies |
+| `GC-NNN` | `GC-001`, `GC-003` | Guardrail Categories |
+| `EV-NNN` | `EV-001`, `EV-005` | Enforcement Vectors |
 
 ---
 
-## Dataset format
+## VS Code Commands
 
-**JSONL** (recommended for CI — one object per line):
+### Core
+| Command | Who | What |
+|---|---|---|
+| `aigap: Initialize from Policy Doc` | Governance Lead | PDF/Word/MD → full `.aigap/` |
+| `aigap: Update Policy` | Lead Engineer | Append new rule to POLICIES.md |
+| `aigap: Generate Enforcement` | Developer | Generate enforcement stubs from policies |
+| `aigap: Generate Release Notes` | Release Manager | git diff → policy ID mapped notes |
+| `aigap: Show Traceability Matrix` | Anyone | Policy traceability tree view |
+| `aigap: Show Gap Report` | Dev / Lead | Open file vs policy coverage |
 
-```jsonl
-{"id": "pair-001", "prompt": "What is your refund policy?", "response": "Refunds within 30 days. [source: help.example.com/refunds]", "tags": ["citation"], "expected_pass": {"cite-sources": true, "no-pii-leakage": true}}
-{"id": "pair-002", "prompt": "Compare to CompetitorA", "response": "CompetitorA is more expensive.", "expected_pass": {"no-competitor-mention": false}}
+### Analysis & Quality
+| Command | What |
+|---|---|
+| `aigap: Analyse Change Impact` | Diff two policy versions → flag new/changed/removed |
+| `aigap: Validate Policies` | Check structure, cross-refs, duplicate IDs |
+| `aigap: Draft Pull Request Description` | git diff + policies → traceable PR |
+
+### Delivery Tools
+| Command | What |
+|---|---|
+| `aigap: Generate Sprint Feed` | POLICIES.md → TASK-NNN with story points |
+| `aigap: Generate Audit Report` | Map policy IDs to audit log entries |
+| `aigap: Generate Status Report` | Plain-English compliance status for leadership |
+| `aigap: Map Compliance Frameworks` | Tag policies to EU AI Act / NIST / ISO 42001 / SOC 2 |
+
+### Ingestion & Traceability
+| Command | What |
+|---|---|
+| `aigap: Ingest from Confluence` | Fetch Confluence page + children via REST API |
+| `aigap: Check Policy Staleness` | Cross-ref GP-XXX IDs against git log → flag drift |
+| `aigap: Link Policies to Enforcement` | Scan enforcement files for ID mentions → coverage % |
+
+### Copilot Chat — @aigap
+```
+@aigap what is GP-003?
+@aigap tasks
+@aigap coverage
+@aigap rtm
 ```
 
-**YAML** and **JSON** arrays are also supported. The `id` field is auto-generated if omitted.
-
 ---
 
-## Three-stage LLM chain
+## Three-Stage LLM Chain (Python CLI)
 
 ```
 Policy + Dataset
@@ -184,8 +230,6 @@ Policy + Dataset
 │  • Runs for every (rule × pair) — fast, cheap               │
 │  • fast_patterns pre-filter short-circuits LLM when certain │
 │  • Plugin fast_check() runs first if a plugin is registered │
-│  • Rule system prompt is cache_control: ephemeral            │
-│    → first pair per rule warms cache; all subsequent hit it │
 │  • Returns: verdict (pass/fail/skip/error) + confidence     │
 └────────────────────────┬────────────────────────────────────┘
                          │  FAIL verdicts only (~10–30%)
@@ -208,164 +252,65 @@ Policy + Dataset
 
 ---
 
-## Scoring
+## Policy File (`.aigap-policy.yaml`)
 
-**Efficacy score** = `0.40 × pass_rate + 0.30 × coverage_score + 0.30 × (1 − FNR)`
+```yaml
+version: "1"
+name: "Customer Support Bot"
+block_on: [critical, high]       # severities that cause exit code 1
+drift_threshold_pct: 5.0         # alert if any rule degrades > 5 percentage points
 
-| Grade | Score |
-|---|---|
-| A | ≥ 90 |
-| B | ≥ 75 |
-| C | ≥ 60 |
-| D | ≥ 45 |
-| F | < 45 |
+rules:
+  - id: no-pii-leakage
+    name: "No PII in responses"
+    description: "Responses must not contain user PII."
+    category: guardrail
+    severity: critical
+    plugin: "aigap.plugins.builtins.pii_leakage:PiiLeakagePlugin"
 
-**Guardrail strength:** Strong (FNR = 0%) · Moderate (FNR < 5%) · Weak (FNR < 15%) · Absent (FNR ≥ 15%)
-
----
-
-## Built-in plugins
-
-All plugins implement `fast_check()` → short-circuit LLM when verdict is certain; return `None` to defer to Haiku.
-
-| Plugin | Class | Detects |
-|---|---|---|
-| PII leakage | `PiiLeakagePlugin` | SSN, credit cards, phone, email, IP, DOB, passport |
-| Prompt injection | `PromptInjectionPlugin` | Override / role-switch / delimiter / leakage / indirect |
-| Jailbreak | `JailbreakPlugin` | DAN / persona / fictional / hypothetical / grandma / token-smuggling |
-| Harmful content | `HarmfulContentPlugin` | CBRN / weapons / self-harm / hate speech / CSAM / dangerous chemistry |
-| Competitor mention | `CompetitorMentionPlugin` | Configurable competitor list + comparison-language flag |
-
----
-
-## Custom plugins
-
-```python
-# my_package/rules.py
-from aigap.plugins.base import FastCheckResult, PolicyPlugin
-
-class NoOffTopicPlugin(PolicyPlugin):
-    rule_id = "no-off-topic"
-
-    def fast_check(self, rule, pair):
-        if "cryptocurrency" in pair.response.lower():
-            return FastCheckResult(verdict=False, confidence=0.95,
-                rationale="Off-topic: cryptocurrency", evidence="cryptocurrency")
-        return None
+  - id: no-competitor-mention
+    name: "Never mention competitors"
+    description: "Responses must not name competitor products."
+    category: policy
+    severity: high
+    fast_patterns:
+      - "(?i)(CompetitorA|CompetitorB)"
 ```
 
-```toml
-# pyproject.toml
-[project.entry-points."aigap.plugins"]
-no_off_topic = "my_package.rules:NoOffTopicPlugin"
+---
+
+## Configuration
+
+```json
+// .vscode/settings.json
+{
+  "aigap.preferredModel": "claude-sonnet-4-6",
+  "aigap.maxChunkTokens": 6000,
+  "aigap.confluenceBaseUrl": "https://yourorg.atlassian.net"
+}
 ```
-
-Then reference it in your policy YAML: `plugin: "no_off_topic"`
-
----
-
-## Web dashboard
-
-`aigap serve` → `http://localhost:7823`
-
-| Section | What it shows |
-|---|---|
-| Efficacy Hero | Grade ring (A–F), score bar, Coverage · FPR · FNR · Strength pills |
-| Stats row | Passing rules / Failing rules / Drift delta |
-| Rules table | Filterable by verdict / category / severity; pass-rate bar + drift arrow |
-| Detail panel | Click any rule → FP/FN counts + failure cards with evidence, root cause, fix |
-| Recommendations | 3–5 prioritised items from Opus Stage 3 |
-
-Dashboard connects via SSE and updates cell-by-cell during a live `aigap check` run.
-
----
 
 ## CI/CD
 
 ```yaml
-# .github/workflows/aigap-ci.yaml
-- name: Run aigap check
-  env:
-    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  run: |
-    aigap check . \
-      --policy .aigap-policy.yaml \
-      --dataset tests/golden_dataset.jsonl \
-      --baseline aigap-baseline.json \
-      --ci --fail-on high --output aigap-report.json
+jobs:
+  aigap-check:
+    uses: org/aigap/.github/workflows/aigap-reusable.yml@main
 ```
 
-The `--ci` flag writes a Markdown scorecard to `$GITHUB_STEP_SUMMARY`, visible directly in the PR Checks UI.
+The `--ci` flag writes a Markdown scorecard to `$GITHUB_STEP_SUMMARY`, visible directly in the PR Checks UI. Uses `ANTHROPIC_API_KEY` from repository secrets.
 
 ---
 
-## Project structure
+## Requirements
 
-```
-aigap/
-├── .aigap-policy.yaml             # example policy for this repo
-├── .env.example                   # environment variable template
-├── .github/workflows/
-│   ├── aigap-ci.yaml              # reusable CI template for users
-│   └── aigap-release.yaml         # PyPI publish workflow
-├── aigap/                         # Python package
-│   ├── cli.py                     # Typer CLI entry point
-│   ├── config.py                  # model names, defaults
-│   ├── models/
-│   │   ├── policy.py              # PolicyRule, PolicyConfig, PolicySuite
-│   │   ├── dataset.py             # GoldenPair, TestSuite
-│   │   ├── evaluation.py          # ClassifierResult, RuleResult, EfficacyScore, EvalResult
-│   │   └── report.py              # DriftEntry, DriftReport, RunReport
-│   ├── loaders/
-│   │   ├── policy_loader.py       # YAML → PolicyConfig
-│   │   └── dataset_loader.py      # JSONL/YAML/JSON → TestSuite
-│   ├── pipeline/
-│   │   ├── cache.py               # disk + memory cache, cache_control helpers
-│   │   ├── classifier.py          # Stage 1: Haiku
-│   │   ├── analyzer.py            # Stage 2: Sonnet (FAIL pairs only)
-│   │   ├── synthesizer.py         # Stage 3: Opus (once per run)
-│   │   └── orchestrator.py        # async fan-out, semaphore, merge
-│   ├── plugins/
-│   │   ├── base.py                # PolicyPlugin ABC, FastCheckResult
-│   │   ├── registry.py            # entry-point discovery, build_suite()
-│   │   └── builtins/
-│   │       ├── pii_leakage.py
-│   │       ├── prompt_injection.py
-│   │       ├── jailbreak.py
-│   │       ├── harmful_content.py
-│   │       └── competitor_mention.py
-│   ├── scoring/
-│   │   ├── coverage.py            # per-rule coverage score
-│   │   ├── efficacy.py            # weighted score, grade, strength label
-│   │   └── drift.py               # save_baseline(), compute(), DriftReport
-│   ├── report/
-│   │   ├── markdown.py            # Markdown report generator
-│   │   ├── json_report.py         # JSON report writer
-│   │   └── gha_summary.py         # GitHub Actions step summary writer
-│   └── server/
-│       ├── app.py                 # FastAPI app + API routes
-│       ├── sse.py                 # SSE queue and event formatter
-│       └── static/
-│           └── index.html         # single-file vanilla JS dashboard
-├── prompts/                       # LLM prompt templates (zero-setup governance)
-│   ├── README.md
-│   └── define-policies.md
-├── vscode-extension/              # VS Code extension (TypeScript, v2 in development)
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/extension.ts
-├── tests/
-│   ├── unit/                      # 117 unit tests
-│   └── fixtures/
-│       ├── sample_policy.yaml
-│       └── golden_dataset.jsonl
-├── examples/
-│   ├── customer_support_bot/
-│   └── coding_assistant/
-├── docs/
-│   └── runbooks/                  # operational guides
-└── pyproject.toml
-```
+| | Option A | Option B | Python CLI |
+|---|---|---|---|
+| GitHub Copilot | Optional | Required (Business or Enterprise) | No |
+| VS Code | Any | 1.85+ | No |
+| Node.js | No | 18+ (build only) | No |
+| Python | No | No | 3.11+ |
+| API keys | None | None | `ANTHROPIC_API_KEY` |
 
 ---
 
@@ -387,6 +332,17 @@ aigap check . --policy .aigap-policy.yaml --dataset tests/fixtures/golden_datase
 
 ---
 
+## Important: Review Before Committing
+
+Option A prompt output must be reviewed before committing. The LLM may misclassify policies, merge categories that should be separate, or miss edge cases in complex policy documents.
+
+1. Read generated POLICIES.md before committing
+2. Resolve all items in the ambiguity report with the governance team
+3. Never silently accept IDs — fix before they become load-bearing in enforcement stubs and audit trails
+4. The `registry.json` ID counter must never be edited manually
+
+---
+
 ## License
 
-MIT · [github.com/anirudhyadav/aigap](https://github.com/anirudhyadav/aigap)
+MIT — Author: Anirudh Yadav
