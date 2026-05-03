@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import { callLLM } from '../llm/client'
 import { loadPoliciesContext } from '../workspace/reader'
 import { getAigapDir } from '../workspace/detector'
@@ -27,11 +27,11 @@ export async function commandPrDraft(): Promise<void> {
     async (_, token) => {
       let gitDiff = ''
       try {
-        gitDiff = execSync(`git diff ${range} --stat --diff-filter=AM`, {
+        gitDiff = execFileSync('git', ['diff', ...range.split(/\s+/), '--stat', '--diff-filter=AM'], {
           cwd: workspaceRoot, maxBuffer: 512 * 1024
         }).toString()
 
-        const commitMessages = execSync(`git log ${range} --oneline`, {
+        const commitMessages = execFileSync('git', ['log', ...range.split(/\s+/), '--oneline'], {
           cwd: workspaceRoot
         }).toString()
 

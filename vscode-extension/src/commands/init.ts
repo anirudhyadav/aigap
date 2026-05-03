@@ -74,8 +74,16 @@ export async function commandInit(context: vscode.ExtensionContext): Promise<voi
       const policies: GuardrailPolicy[] = rawPolicies.map(p => {
         const { id, registry: r } = nextId(registry, 'GP')
         registry = r
-        const catId = categories.length > 0 ? categories[0].id : 'GC-001'
-        const vecId = vectors.length > 0 ? vectors[0].id : 'EV-001'
+
+        const matchedCat = categories.find(c =>
+          c.name.toLowerCase().includes(p.suggestedCategory?.toLowerCase() ?? '') ||
+          (p.suggestedCategory ?? '').toLowerCase().includes(c.name.toLowerCase())
+        )
+        const catId = matchedCat?.id ?? (categories.length > 0 ? categories[0].id : 'GC-001')
+
+        const matchedVec = vectors.find(v => v.type === p.suggestedVector)
+        const vecId = matchedVec?.id ?? (vectors.length > 0 ? vectors[0].id : 'EV-001')
+
         return {
           id,
           name: p.name,

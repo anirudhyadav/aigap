@@ -1,6 +1,10 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_')
+}
+
 export function writeFile(filePath: string, content: string): void {
   const dir = path.dirname(filePath)
   if (!fs.existsSync(dir)) {
@@ -26,11 +30,13 @@ export function writeGapReport(aigapDir: string, content: string): void {
 }
 
 export function writeRelease(aigapDir: string, version: string, content: string): void {
-  writeFile(path.join(aigapDir, 'releases', `${version}.md`), content)
+  const sanitized = sanitizeFilename(version)
+  writeFile(path.join(aigapDir, 'releases', `${sanitized}.md`), content)
 }
 
 export function writeStatusReport(aigapDir: string, version: string, content: string): void {
-  writeFile(path.join(aigapDir, 'releases', `status-${version}.md`), content)
+  const sanitized = sanitizeFilename(version)
+  writeFile(path.join(aigapDir, 'releases', `status-${sanitized}.md`), content)
 }
 
 export function writeAuditReport(aigapDir: string, content: string): void {

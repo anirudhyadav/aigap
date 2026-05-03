@@ -5,7 +5,7 @@ import { loadPoliciesContext } from '../workspace/reader'
 import { getAigapDir } from '../workspace/detector'
 import { writeRelease } from '../workspace/writer'
 import { readRegistry, nextId, writeRegistry } from '../core/registry'
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 
 export async function commandReleaseNotes(): Promise<void> {
   const aigapDir = getAigapDir()
@@ -37,7 +37,7 @@ export async function commandReleaseNotes(): Promise<void> {
       progress.report({ message: 'Reading git diff...' })
       let gitDiff = ''
       try {
-        gitDiff = execSync(`git diff ${branch} --stat --diff-filter=AM`, {
+        gitDiff = execFileSync('git', ['diff', ...branch.split(/\s+/), '--stat', '--diff-filter=AM'], {
           cwd: vscode.workspace.workspaceFolders?.[0].uri.fsPath,
           maxBuffer: 1024 * 1024
         }).toString()
