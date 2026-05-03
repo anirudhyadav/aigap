@@ -87,6 +87,90 @@ async def history() -> dict:
         return {}
 
 
+@app.get("/drift")
+async def drift_endpoint() -> dict:
+    """Return per-rule drift data comparing latest report to baseline."""
+    baseline_path = Path(BASELINE_PATH)
+    if not REPORT_JSON.exists():
+        return {"drift": []}
+
+    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    baseline = {}
+    if baseline_path.exists():
+        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+
+    baseline_rates = {}
+    for r in baseline.get("rule_results", []):
+        baseline_rates[r["rule_id"]] = r.get("pass_rate", 1.0)
+
+    drift_entries = []
+    for r in report.get("rule_results", []):
+        rule_id = r["rule_id"]
+        current_rate = r.get("pass_rate", 1.0)
+        prev_rate = baseline_rates.get(rule_id)
+        delta = (current_rate - prev_rate) if prev_rate is not None else None
+        drift_entries.append({
+            "rule_id": rule_id,
+            "current_rate": current_rate,
+            "baseline_rate": prev_rate,
+            "delta": delta,
+            "alert": delta is not None and delta < -0.05
+        })
+
+    return {"drift": drift_entries}
+
+
+@app.get("/trends")
+async def trends_endpoint() -> dict:
+    """Return historical pass-rate trend data from stored reports."""
+    import glob
+    reports = sorted(glob.glob("aigap-report*.json"))
+    if not reports:
+        return {"trends": {}}
+
+    trends: dict[str, list[dict]] = {}
+    for report_path in reports[-10:]:
+        try:
+            data = json.loads(Path(report_path).read_text(encoding="utf-8"))
+            run_id = data.get("run_id", report_path)
+            timestamp = data.get("timestamp", "")
+            for r in data.get("rule_results", []):
+                rule_id = r["rule_id"]
+                if rule_id not in trends:
+                    trends[rule_id] = []
+                trends[rule_id].append({
+                    "run_id": run_id,
+                    "timestamp": timestamp,
+                    "pass_rate": r.get("pass_rate", 1.0)
+                })
+        except Exception:
+            continue
+
+    return {"trends": trends}
+
+
+@app.get("/plugins")
+async def plugins_endpoint() -> dict:
+    """Return plugin results breakdown from the latest report."""
+    if not REPORT_JSON.exists():
+        return {"plugins": []}
+
+    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    plugin_data = []
+    for r in report.get("rule_results", []):
+        plugin_name = r.get("plugin")
+        if plugin_name:
+            plugin_data.append({
+                "rule_id": r["rule_id"],
+                "plugin": plugin_name,
+                "pass_rate": r.get("pass_rate", 1.0),
+                "fast_path_hits": r.get("fast_path_hits", 0),
+                "total_pairs": r.get("total_pairs", 0)
+            })
+
+    return {"plugins": plugin_data}
+
+
 @app.get("/rules")
 async def rules_endpoint(
     policy: str = Query(".aigap-policy.yaml", description="Path to policy YAML"),

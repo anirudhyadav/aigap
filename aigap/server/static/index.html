@@ -563,8 +563,20 @@
 
   <!-- Drift -->
   <div id="drift-panel" class="section">
-    <div class="drift-title">Drift <span class="muted" style="font-weight:400;font-size:11px">— last 5 runs</span></div>
+    <div class="drift-title">Drift <span class="muted" style="font-weight:400;font-size:11px">— baseline comparison</span></div>
     <div id="drift-rows"></div>
+  </div>
+
+  <!-- Trends -->
+  <div id="trends-panel" class="section" style="margin-top:24px">
+    <div style="font-size:15px;font-weight:600;margin-bottom:12px">Historical Trends <span class="muted" style="font-weight:400;font-size:11px">— last 10 runs</span></div>
+    <div id="trends-chart" style="display:grid;gap:8px"></div>
+  </div>
+
+  <!-- Plugin Breakdown -->
+  <div id="plugins-panel" class="section" style="margin-top:24px">
+    <div style="font-size:15px;font-weight:600;margin-bottom:12px">Plugin Breakdown</div>
+    <div id="plugins-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
   </div>
 
 </div><!-- /root -->
@@ -1116,6 +1128,83 @@ async function fetchReport() { return await api('/report/latest', MOCK.report) }
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
+async function renderDriftPanel() {
+  try {
+    const data = await api('/drift', { drift: [] })
+    const container = document.getElementById('drift-rows')
+    if (!data.drift?.length) {
+      container.innerHTML = '<div class="muted" style="padding:12px;font-size:13px">No drift data yet. Run a check with a baseline.</div>'
+      return
+    }
+    container.innerHTML = data.drift.map(d => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <code style="font-size:12px;color:var(--accent);min-width:180px">${d.rule_id}</code>
+        <div style="flex:1">
+          <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${(d.current_rate * 100)}%;background:${d.alert ? 'var(--fail)' : 'var(--pass)'};border-radius:2px"></div>
+          </div>
+        </div>
+        <span style="font-size:12px;font-weight:600;min-width:48px;text-align:right">${(d.current_rate * 100).toFixed(0)}%</span>
+        ${d.delta != null ? `<span class="${d.delta >= 0 ? 'δ-up' : 'δ-down'}" style="min-width:48px;text-align:right">${d.delta >= 0 ? '▲' : '▼'} ${Math.abs(d.delta * 100).toFixed(1)}%</span>` : '<span class="δ-flat" style="min-width:48px;text-align:right">—</span>'}
+        ${d.alert ? '<span class="badge badge-fail" style="font-size:10px">DRIFT</span>' : ''}
+      </div>
+    `).join('')
+  } catch { /* drift panel is optional */ }
+}
+
+async function renderTrendsPanel() {
+  try {
+    const data = await api('/trends', { trends: {} })
+    const container = document.getElementById('trends-chart')
+    const trends = data.trends || {}
+    const ruleIds = Object.keys(trends)
+    if (!ruleIds.length) {
+      container.innerHTML = '<div class="muted" style="padding:12px;font-size:13px">No historical trend data. Run multiple checks to build history.</div>'
+      return
+    }
+    container.innerHTML = ruleIds.slice(0, 8).map(ruleId => {
+      const points = trends[ruleId]
+      const rates = points.map(p => p.pass_rate)
+      const maxPts = 10
+      const sparkWidth = 200
+      const sparkHeight = 32
+      const xStep = sparkWidth / Math.max(maxPts - 1, 1)
+      const pathParts = rates.map((r, i) => `${i === 0 ? 'M' : 'L'} ${i * xStep} ${sparkHeight - r * sparkHeight}`)
+      const latestRate = rates[rates.length - 1] ?? 0
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px">
+          <code style="font-size:11px;color:var(--accent);min-width:180px">${ruleId}</code>
+          <svg width="${sparkWidth}" height="${sparkHeight}" style="flex-shrink:0">
+            <path d="${pathParts.join(' ')}" fill="none" stroke="${latestRate >= 0.9 ? 'var(--pass)' : latestRate >= 0.7 ? 'var(--warn)' : 'var(--fail)'}" stroke-width="2"/>
+          </svg>
+          <span style="font-size:12px;font-weight:600;min-width:40px;text-align:right">${(latestRate * 100).toFixed(0)}%</span>
+        </div>`
+    }).join('')
+  } catch { /* trends panel is optional */ }
+}
+
+async function renderPluginsPanel() {
+  try {
+    const data = await api('/plugins', { plugins: [] })
+    const container = document.getElementById('plugins-grid')
+    if (!data.plugins?.length) {
+      container.innerHTML = '<div class="muted" style="padding:12px;font-size:13px">No plugin data. Plugins are declared in .aigap-policy.yaml rules.</div>'
+      return
+    }
+    container.innerHTML = data.plugins.map(p => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">${p.plugin.split(':').pop() || p.plugin}</div>
+        <code style="font-size:10px;color:var(--muted);display:block;margin-bottom:8px">${p.rule_id}</code>
+        <div style="display:flex;gap:12px;font-size:12px">
+          <span>Pass: <strong style="color:var(--pass)">${(p.pass_rate * 100).toFixed(0)}%</strong></span>
+          <span>Fast-path: <strong>${p.fast_path_hits}</strong></span>
+          <span>Total: <strong>${p.total_pairs}</strong></span>
+        </div>
+      </div>
+    `).join('')
+  } catch { /* plugins panel is optional */ }
+}
+
 async function init() {
   const [report, drift, history] = await Promise.all([
     api('/report/latest', MOCK.report),
@@ -1126,6 +1215,9 @@ async function init() {
   S.drift   = drift
   S.history = history
   renderAll()
+  renderDriftPanel()
+  renderTrendsPanel()
+  renderPluginsPanel()
 }
 
 init()
