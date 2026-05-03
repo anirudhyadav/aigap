@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { callLLM } from '../llm/client'
 import { loadPoliciesContext } from '../workspace/reader'
 import { getAigapDir } from '../workspace/detector'
-import { writeStatusReport } from '../workspace/writer'
+import { writeStatusReport, sanitizeFilename } from '../workspace/writer'
 
 const SYSTEM = `You are writing a compliance status report for non-technical leadership.
 Use plain English. No code, no jargon. Explain everything in terms of risk, progress, and next steps.
@@ -39,7 +39,7 @@ export async function commandStatusReport(): Promise<void> {
       const doc = await vscode.workspace.openTextDocument({ content: response.text, language: 'markdown' })
       await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside)
 
-      vscode.window.showInformationMessage(`aigap: Status report saved to .aigap/releases/status-${version}.md`)
+      vscode.window.showInformationMessage(`aigap: Status report saved to .aigap/releases/status-${sanitizeFilename(version)}.md`)
     }
   )
 }

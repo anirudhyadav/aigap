@@ -3,7 +3,7 @@ import { callLLM } from '../llm/client'
 import { buildReleaseNotesPrompt } from '../llm/context_builder'
 import { loadPoliciesContext } from '../workspace/reader'
 import { getAigapDir } from '../workspace/detector'
-import { writeRelease } from '../workspace/writer'
+import { writeRelease, sanitizeFilename } from '../workspace/writer'
 import { readRegistry, nextId, writeRegistry } from '../core/registry'
 import { execFileSync } from 'child_process'
 
@@ -59,7 +59,7 @@ Format as markdown with sections: ## Summary, ## What Changed (mapped to GP-XXX 
       const doc = await vscode.workspace.openTextDocument({ content: releaseContent, language: 'markdown' })
       await vscode.window.showTextDocument(doc)
 
-      vscode.window.showInformationMessage(`aigap: Release notes saved to .aigap/releases/${version}.md`)
+      vscode.window.showInformationMessage(`aigap: Release notes saved to .aigap/releases/${sanitizeFilename(version)}.md`)
     }
   )
 }
