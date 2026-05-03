@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: aigap-validate
+        name: aigap policy validation
+        language: python
+        entry: python -m aigap.hooks.validate
+        files: '\.aigap-policy\.yaml$|\.aigap/POLICIES\.md$'
+        pass_filenames: false
+        additional_dependencies: ['pyyaml>=6.0', 'pydantic>=2.0']
+      - id: aigap-check
+        name: aigap guardrail check
+        language: python
+        entry: python -m aigap.hooks.check
+        files: '\.aigap-policy\.yaml$'
+        pass_filenames: false
+        stages: [pre-push]
+        additional_dependencies: ['pyyaml>=6.0', 'pydantic>=2.0', 'anthropic>=0.40.0']
